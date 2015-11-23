@@ -1,4 +1,4 @@
-package auction;
+package auction
 
 import akka.actor._
 import akka.event.LoggingReceive
@@ -6,6 +6,7 @@ import akka.persistence.{RecoveryCompleted, PersistentActor}
 import auction.Auction.PersistentState.PersistentState
 import scala.concurrent.duration._
 import auction.Buyer.AuctionWon
+import scala.language.postfixOps
 import scala.math.BigDecimal.double2bigDecimal
 import scala.math.BigDecimal.int2bigDecimal
 
@@ -160,19 +161,25 @@ object AuctionApp extends App {
   val path = auctionSearch.path.toString
   
   val seller1 = system.actorOf(Props(new Seller(path, "bag of potatoes")), "bag_of_potatoes")
+
+  /*
   val seller2 = system.actorOf(Props(new Seller(path, "bike pump")), "bike_pump")
   val seller3 = system.actorOf(Props(new Seller(path, "unwanted tomato")), "unwanted_tomato")
+  */
   
   seller1 ! Seller.Start
+  /*
   seller2 ! Seller.Start
   seller3 ! Seller.Start
-  
+  */
   val buyer1 = system.actorOf(
       Props(new Buyer(path, 150.0, "bag", "pump")), 
       "Stanislaw_Kaloryfer")
   val buyer2 = system.actorOf(
       Props(new Buyer(path, 60.0, "potatoes")), 
       "Andrzej_Seler")
+
+  /*
   val buyer3 = system.actorOf(
       Props(new Buyer(path, 120.0, "bike")), 
       "Maria_Pudelko")
@@ -182,10 +189,14 @@ object AuctionApp extends App {
   val buyer5 = system.actorOf(
       Props(new Buyer(path, 80.0, "bag")), 
       "Wojciech_Karabin")
+      */
             
   buyer1 ! Buyer.Start
   buyer2 ! Buyer.Start
+
+  /*
   buyer3 ! Buyer.Start
   buyer4 ! Buyer.Start
-  buyer5 ! Buyer.Start  
+  buyer5 ! Buyer.Start
+  */
 }
