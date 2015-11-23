@@ -1,14 +1,15 @@
 package auction
 
 import akka.actor._
-import akka.event.LoggingReceive
+import auction.Notifier.Notify
+import com.typesafe.config.ConfigFactory
 import scala.concurrent.duration._
 import auction.Buyer.AuctionWon
 import scala.language.postfixOps
 import scala.math.BigDecimal.double2bigDecimal
 import scala.math.BigDecimal.int2bigDecimal
 
-class Auction(title: String, seller: ActorRef, auctionSearchPath: String) extends Actor {
+class Auction(title: String, seller: ActorRef, auctionSearchPath: String, notifier: ActorRef) extends Actor {
   import Auction._
   import context._
    
@@ -26,6 +27,7 @@ class Auction(title: String, seller: ActorRef, auctionSearchPath: String) extend
     case Bid(amount) =>
       topBid = amount
       winner = Option(sender())
+      notifier ! Notify(title, winner, topBid)
       context become activated
     case BidExpired =>
       system.scheduler.scheduleOnce(deleteTimeout, self, DeleteExpired)
@@ -47,6 +49,7 @@ class Auction(title: String, seller: ActorRef, auctionSearchPath: String) extend
         topBid = amount
         winner foreach { _ ! BidTopped(amount) }
         winner = Option(sender())
+        notifier ! Notify(title, winner, topBid)
       } else {
         sender ! BidTopped(topBid)
       }  
@@ -87,15 +90,20 @@ object Auction {
 }
 
 object AuctionApp extends App {
-  val system = ActorSystem("AuctionSystem")
-  
+  val config = ConfigFactory.load()
+  val publisherSystem = ActorSystem("PublisherSystem", config.getConfig("serverapp").withFallback(config))
+  val publisher = publisherSystem.actorOf(Props[AuctionPublisher], "auction_publisher")
+
+  val system = ActorSystem("AuctionSystem", config.getConfig("clientapp").withFallback(config))
+  val notifier = system.actorOf(Props(new Notifier(publisher)), "publisher")
+
   val auctionSearch = system.actorOf(Props[AuctionSearch], "auction_search")
   
   val path = auctionSearch.path.toString
   
-  val seller1 = system.actorOf(Props(new Seller(path, "bag of potatoes")), "bag_of_potatoes")
-  val seller2 = system.actorOf(Props(new Seller(path, "bike pump")), "bike_pump")
-  val seller3 = system.actorOf(Props(new Seller(path, "unwanted tomato")), "unwanted_tomato")
+  val seller1 = system.actorOf(Props(new Seller(notifier, path, "bag of potatoes")), "bag_of_potatoes")
+  val seller2 = system.actorOf(Props(new Seller(notifier, path, "bike pump")), "bike_pump")
+  val seller3 = system.actorOf(Props(new Seller(notifier, path, "unwanted tomato")), "unwanted_tomato")
 
   seller1 ! Seller.Start
   seller2 ! Seller.Start

@@ -4,7 +4,7 @@ import akka.actor._
 import akka.event.LoggingReceive
 import scala.concurrent.duration._
 
-class Seller(auctionSearchPath: String, titles: String*) extends Actor  {
+class Seller(notifier: ActorRef, auctionSearchPath: String, titles: String*) extends Actor  {
   import Seller._
   import context._
   
@@ -13,7 +13,7 @@ class Seller(auctionSearchPath: String, titles: String*) extends Actor  {
   def receive: Receive = {
     case Start =>
       auctions = titles.map { 
-        x => system.actorOf(Props(new Auction(x, self, auctionSearchPath)), s"auction_${x.replace(" ", "_") }") 
+        x => system.actorOf(Props(new Auction(x, self, auctionSearchPath, notifier)), s"auction_${x.replace(" ", "_") }")
       }
       auctions foreach { _ ! Auction.Start }
     case Auction.AuctionEnded =>

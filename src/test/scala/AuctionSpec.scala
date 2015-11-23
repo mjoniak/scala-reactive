@@ -12,19 +12,21 @@ class AuctionSpec extends TestKit(ActorSystem("AuctionSpec"))
   override def afterAll() = {
     system.terminate()
   }
+
+  val publisher = TestProbe()
   
   "An Auction" must {
     
     "register in AuctionSearch after starting" in {
       val auctionSearch = TestProbe()
-      val auction = system.actorOf(Props(new Auction("sprzedam opla", self, auctionSearch.testActor.path.toString)))
+      val auction = system.actorOf(Props(new Auction("sprzedam opla", self, auctionSearch.testActor.path.toString, publisher.ref)))
       auction ! Auction.Start
       auctionSearch expectMsg AuctionSearch.Register(mutable.Seq("sprzedam", "opla"))
     }
     
     "only accept rising bids" in {
       val auctionSearch = TestProbe()
-      val auction = system.actorOf(Props(new Auction("sprzedam opla", self, auctionSearch.testActor.path.toString)))
+      val auction = system.actorOf(Props(new Auction("sprzedam opla", self, auctionSearch.testActor.path.toString, publisher.ref)))
       auction ! Auction.Start
       auction ! Auction.Bid(10)
       auction ! Auction.Bid(1)
@@ -36,7 +38,7 @@ class AuctionSpec extends TestKit(ActorSystem("AuctionSpec"))
     "notify Seller and Buyer after winning" in {
       val auctionSearch = TestProbe()
       val seller = TestProbe()
-      val auction = system.actorOf(Props(new Auction("sprzedam opla", seller.ref, auctionSearch.testActor.path.toString)))
+      val auction = system.actorOf(Props(new Auction("sprzedam opla", seller.ref, auctionSearch.testActor.path.toString, publisher.ref)))
       auction ! Auction.Start
       auction ! Auction.Bid(10)
       auction ! Auction.BidExpired
