@@ -2,8 +2,7 @@ package auction
 
 import akka.actor._
 import collection.mutable._
-import akka.event.LoggingReceive
-import scala.concurrent.duration._
+import scala.collection.parallel.mutable
 import scala.util.Random
 
 class AuctionSearch extends Actor {
@@ -12,7 +11,7 @@ class AuctionSearch extends Actor {
   
   val auctions = Map[String, Seq[ActorRef]]() withDefaultValue Seq()
   
-  def receive: Receive = LoggingReceive {
+  def receive: Receive = {
     case Search(name) => 
       val random = Random
       if (auctions contains name) sender ! SearchResponse(auctions(name))

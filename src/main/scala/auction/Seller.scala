@@ -8,9 +8,9 @@ class Seller(auctionSearchPath: String, titles: String*) extends Actor  {
   import Seller._
   import context._
   
-  var auctions = Seq.empty[ActorRef];
+  var auctions = Seq.empty[ActorRef]
   
-  def receive: Receive = LoggingReceive {
+  def receive: Receive = {
     case Start =>
       auctions = titles.map { 
         x => system.actorOf(Props(new Auction(x, self, auctionSearchPath)), s"auction_${x.replace(" ", "_") }") 
